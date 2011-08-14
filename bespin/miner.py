@@ -32,25 +32,25 @@ class Miner(object):
         try:
             data_xml = xml.dom.minidom.parse(xmlfile)
         except:
-            return
+            return False
 
         root = data_xml.documentElement
 
         if kinds and not root.tagName in kinds:
-            return
+            return False
 
         # store the results into the database
         data_json = self._parse_xml(root, idfilter)
         if 'GUID' in data_json['^']:
             guid = data_json['^']['GUID']
         else:
-            return
+            return False
         if 'fqn' in data_json['^']:
             id = data_json['^']['fqn']
         elif 'Id' in data_json['^']['Id']:
             id = data_json['^']['Id']
         else:
-            return
+            return False
         kind = root.tagName
         version = 0
         if 'Version' in data_json['^']:
@@ -63,6 +63,7 @@ class Miner(object):
         except sqlite3.IntegrityError:
             self.c.execute('UPDATE swtor SET id=?, kind=?, value=?, version=?, revision=? WHERE key=? AND revision<?',row[1:]+(row[0],row[5]))
         self.conn.commit()
+        return True
 
 
     def _get_attributes(self, node):

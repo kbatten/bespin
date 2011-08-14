@@ -91,6 +91,10 @@ if __name__ == "__main__":
     
     config = Config(sys.argv)
     miner = bespin.Miner(config.destination)
+    count = 0
 
     for xmlfile in walk_files(config.source, '.xml', 1*1024*1024):
-        miner.loadxml(xmlfile, kinds=['Ability', 'DataTable'], idfilter=config.filter)
+        if miner.loadxml(xmlfile, kinds=['Ability', 'DataTable'], idfilter=config.filter):
+            count += 1
+
+    print "Added/updated {0} records".format(count)
