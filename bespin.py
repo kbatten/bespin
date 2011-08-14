@@ -2,6 +2,10 @@
 """Mine swtor data files
 
 Only mines xml files, and only if they are less than 1MB in size
+Stores the results into the provided sqlite database.swtor
+
+Kinds:
+Ability -- abilities, talents
 """
 import sys
 import getopt
@@ -29,12 +33,14 @@ Options:
 
  -d <destination>, --destination=<destination>
      Data destination that will be exported to
+     This is an sqlite database, and the table is "swtor"
 
  -f <id>, --filter=<id>
+     NYI
      Only extract objects with an Id that matches the pattern
 
 Example:
- """ + sys.argv[0] + """ -s assets_locale_en_us_1/ -d data.sdb -f "abl.*"
+ """ + sys.argv[0] + """ -s assets_locale_en_us_1 -d data.sdb
 """
     sys.exit(r)
 
@@ -86,25 +92,5 @@ if __name__ == "__main__":
     config = Config(sys.argv)
     miner = bespin.Miner(config.destination)
 
-    outputfile = file(config.destination,"w")
-
     for xmlfile in walk_files(config.source, '.xml', 1*1024*1024):
-        try:
-            data = miner.loadxml(xmlfile, kind='Ability', idfilter=config.filter)
-        except Exception as ex:
-            print xmlfile
-            raise ex
-        if data:
-            outputfile.write(xmlfile + "\n")
-            print xmlfile
-            try:
-                outputfile.write(data['^']['Id'] + "\n")
-                print data['^']['Id']
-                outputfile.write(data['Name']['text']['%'] + "\n")
-                print data['Name']['text']['%']
-                outputfile.write(data['Description']['text']['%'] + "\n")
-                print data['Description']['text']['%']
-            except:
-                pass
-            outputfile.write("\n")
-            print
+        miner.loadxml(xmlfile, kinds=['Ability'], idfilter=config.filter)

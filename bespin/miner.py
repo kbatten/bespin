@@ -1,25 +1,30 @@
-# TODO: filter on Id glob
+# TODO: filter on fqn/Id glob
 
 import xml.dom.minidom
 import json
+import sqlite3
+
 
 class Miner(object):
     def __init__(self, database):
         """Initialize the Miner
 
         Keyword arguments:
-        database -- either a string or a file object
+        database -- path to sqlite database
         """
-        if isinstance(database, str):
-            self.database = file(database,"w")
-        else:
-            self.database = database
+        self.conn = sqlite3.connect(database)
+        self.c = self.conn.cursor()
+        self.c.execute('''CREATE TABLE IF NOT EXISTS swtor
+(key TEXT PRIMARY KEY, id TEXT, kind TEXT, value TEXT, version INT, revision INT)''')
 
-    def loadxml(self, xmlfile, kind=None, idfilter=None):
+
+    def loadxml(self, xmlfile, kinds=None, idfilter=None):
         """Load data from an xml file
 
         Keyword arguments:
         xmlfile -- either a string or a file object
+        kinds -- a list that filters results on type (Ability, Tag, etc)
+        idfilter -- a blob that filters results based on Id
         """
         if isinstance(xmlfile, str):
             xmlfile = file(xmlfile)
@@ -27,16 +32,38 @@ class Miner(object):
         try:
             data_xml = xml.dom.minidom.parse(xmlfile)
         except:
-            return None
+            return
 
         root = data_xml.documentElement
 
-        if kind and root.tagName != kind:
-            return None
-        
-        if root.tagName == "Ability":
-            return self._parse_xml_ability(root, idfilter)
-        return None
+        if kinds and not root.tagName in kinds:
+            return
+
+        # store the results into the database
+        data_json = self._parse_xml(root, idfilter)
+        if 'GUID' in data_json['^']:
+            guid = data_json['^']['GUID']
+        else:
+            return
+        if 'fqn' in data_json['^']:
+            id = data_json['^']['fqn']
+        elif 'Id' in data_json['^']['Id']:
+            id = data_json['^']['Id']
+        else:
+            return
+        kind = root.tagName
+        version = 0
+        if 'Version' in data_json['^']:
+            revision = int(data_json['^']['Version'])
+        else:
+            revision = 0
+        row = (guid, id, kind, json.dumps(data_json), version, revision)
+        try:
+            self.c.execute('INSERT INTO swtor VALUES (?,?,?,?,?,?)', row)
+        except sqlite3.IntegrityError:
+            self.c.execute('UPDATE swtor SET id=?, kind=?, value=?, version=?, revision=? WHERE key=? AND revision<?',row[1:]+(row[0],row[5]))
+        self.conn.commit()
+
 
     def _get_attributes(self, node):
         # generate key value pairs of attributes
@@ -44,6 +71,7 @@ class Miner(object):
         for i in range(node.attributes.length):
             item = node.attributes.item(i)
             yield item.name, item.value
+
 
     def _recurse_copy_nodes(self, node_xml, node_json):
         # recursively copy xml to json
@@ -81,12 +109,12 @@ class Miner(object):
                     self._recurse_copy_nodes(child, node_json[child.tagName])
 
 
-    def _parse_xml_ability(self, root, idfilter):
+    def _parse_xml(self, root, idfilter):
         # parse Ability xml data and return json
         # only concern is using the word 'type' here
         # as an index
         data_json = {
-            'type':"Ability"
+            'type':root.tagName
             }
 
         node_xml = root
