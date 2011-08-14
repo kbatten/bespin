@@ -18,6 +18,11 @@ class Miner(object):
 (key TEXT PRIMARY KEY, id TEXT, kind TEXT, value TEXT, version INT, revision INT)''')
 
 
+    def close(self):
+        self.conn.commit()
+        self.c.close()
+
+
     def loadxml(self, xmlfile, kinds=None, idfilter=None):
         """Load data from an xml file
 
