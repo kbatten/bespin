@@ -63,6 +63,7 @@ class Miner(object):
         except sqlite3.IntegrityError:
             self.c.execute('UPDATE swtor SET id=?, kind=?, value=?, version=?, revision=? WHERE key=? AND revision<?',row[1:]+(row[0],row[5]))
         self.conn.commit()
+
         return True
 
 

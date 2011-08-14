@@ -1,7 +1,7 @@
 #/usr/bin/env python
 """Mine swtor data files
 
-Only mines xml files, and only if they are less than 1MB in size
+Only mines xml files, and only if they are less than 10MB in size
 Stores the results into the provided sqlite database.swtor
 
 Kinds:
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     miner = bespin.Miner(config.destination)
     count = 0
 
-    for xmlfile in walk_files(config.source, '.xml', 1*1024*1024):
+    for xmlfile in walk_files(config.source, '.xml', 10*1024*1024):
         if miner.loadxml(xmlfile, kinds=['Ability', 'DataTable'], idfilter=config.filter):
             count += 1
 
