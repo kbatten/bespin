@@ -93,4 +93,4 @@ if __name__ == "__main__":
     miner = bespin.Miner(config.destination)
 
     for xmlfile in walk_files(config.source, '.xml', 1*1024*1024):
-        miner.loadxml(xmlfile, kinds=['Ability'], idfilter=config.filter)
+        miner.loadxml(xmlfile, kinds=['Ability', 'DataTable'], idfilter=config.filter)
