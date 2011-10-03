@@ -154,6 +154,9 @@ class BespinApp(object):
                 statusbar.SetStatusText(statustext, 1)
             if miner.loadxml(xmlfile, kinds=['Ability', 'DataTable']):
                 count += 1
+                if statusbar:
+                    statusbar.SetStatusText("processing {0}".format(count), 0)
+
         miner.close()
 
         if statusbar:

@@ -15,7 +15,7 @@ class Miner(object):
         self.conn = sqlite3.connect(database)
         self.c = self.conn.cursor()
         self.c.execute('''CREATE TABLE IF NOT EXISTS swtor
-(key TEXT PRIMARY KEY, id TEXT, kind TEXT, value TEXT, version INT, revision INT)''')
+(key TEXT PRIMARY KEY, id TEXT, kind TEXT, value TEXT, version INT, revision INT, source TEXT)''')
 
 
     def close(self):
@@ -62,11 +62,11 @@ class Miner(object):
             revision = int(data_json['^']['Version'])
         else:
             revision = 0
-        row = (guid, id, kind, json.dumps(data_json), version, revision)
+        row = (guid, id, kind, json.dumps(data_json), version, revision, xmlfile)
         try:
-            self.c.execute('INSERT INTO swtor VALUES (?,?,?,?,?,?)', row)
+            self.c.execute('INSERT INTO swtor VALUES (?,?,?,?,?,?,?)', row)
         except sqlite3.IntegrityError:
-            self.c.execute('UPDATE swtor SET id=?, kind=?, value=?, version=?, revision=? WHERE key=? AND revision<?',row[1:]+(row[0],row[5]))
+            self.c.execute('UPDATE swtor SET id=?, kind=?, value=?, version=?, revision=?, source=? WHERE key=? AND revision<?',row[1:]+(row[0],row[5]))
         self.conn.commit()
 
         return True
