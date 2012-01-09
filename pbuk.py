@@ -72,7 +72,8 @@ class DBLBFile(object):
 
         marker = self.fp.read(4)
 
-        # read label + two nulls
+        # read 4bytes (?) + label + two nulls
+        self.fp.seek(4, os.SEEK_CUR)
         label = self.fp.read(label_size)
         self.fp.seek(2, os.SEEK_CUR)
 
@@ -184,25 +185,26 @@ def walk_files(base, extension):
                 yield f
 
 sourcebase = r"C:\Program Files (x86)\Star Wars-The Old Republic\Assets"
-filenames = [r"D:\src\bespin\test\d2222ce825b29178.pbuk"]
+#filenames = [r"D:\src\bespin\test\d2222ce825b29178.pbuk"]
 #filenames = [r"D:\src\bespin\test\dest\red_system_1\pbuk\1d18445f5f283189.pbuk"]
 
-#filenames = walk_files(r"D:\src\bespin\test\dest\red_system_1\pbuk\\","pbuk")
+filenames = walk_files(r"D:\src\bespin\assets\\","pbuk")
 
 items = 0
 for filename in filenames:
     pbuk = PBUKFile(filename)
+#    item = "abl.sith_warrior.assault"
 #    item = "abl.sith_warrior.vicious_throw"
 #    item = "npc.location.taris.mob.shyrack.bogstalker_extractor"
-    #item = "npc.location.balmorra_republic.mob.droid.empire.imperial_service_droid"
-    print filename
+#    item = "npc.location.balmorra_republic.mob.droid.empire.imperial_service_droid"
+#    print filename
+
     for item in pbuk.objects:
-        items += 1
-        if items > 2:
-            break
-        print item
-        print pbuk.objects[item]
-#        print pbuk.objects[item]["data"]
+#    if item in pbuk.objects:
+        if item.find("vicious") >= 0:
+            items += 1
+            print item
+            print pbuk.objects[item]
     pbuk.close()
             
 print "done"

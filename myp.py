@@ -85,9 +85,7 @@ class MYPFile(object):
         return file_headers
 
     def _read_file(self, file_header):
-        self.fp.seek(file_header["position"])
-        # read file header?
-        assert(file_header["header_size"] == 0)
+        self.fp.seek(file_header["position"] +  file_header["header_size"])
         
         raw = self.fp.read(file_header["compressed_size"])
         if file_header["compression"] == 1:
@@ -99,8 +97,11 @@ class MYPFile(object):
 
         # try to figure out what the files actually are
         # since we don't have a list of filenames -> hashes
-        if file_header["filename"] in ["13e36079f828e03e",
-                                       "e6715ac71361b9e4"]:
+        if file_header["filename"] in ["e6715ac71361b9e4",
+                                       "36f834cbe1d27884",
+                                       "902483220a24be1e",
+                                       "xxx13e36079f828e03e",
+                                       ]:
             # no clue at all what these files are
             kind = "raw"
         elif data[:4] == "RIFF":
@@ -124,6 +125,8 @@ class MYPFile(object):
             kind = "pinf"
         elif data[:4] == "DBLB":
             kind = "dblb"
+        elif data[:4] == "GAWB":
+            kind = "gawb"
         elif data[:3] == "AMX":
             kind = "amx"
         elif data[:3] == "DDS":
@@ -161,6 +164,16 @@ class MYPFile(object):
             kind = "raw"
         elif data.find("GOD"+chr(0)+"Camera"+chr(0)+"Root") != -1: # TODO: need a better match
             kind = "raw"
+        elif data[:34] == "|NAME|ID|REFID|FQN|ORG|ORGID|TAGS|":
+            kind = "csv"
+        elif data[4:11] == chr(0x00) + chr(0x0) + chr(0x00) + chr(0x00) + "cnv":
+            # seems to be a list of wem filenames + some resource data
+            kind = "raw"
+        elif self._check_localization(file_header, data):
+            kind = "raw_check"
+        elif data == chr(0x00) * 8:
+            # don't know why there are files of 8 nulls
+            kind = "raw"
 #        elif data.find(chr(0)) != -1:
 #            # catchall for binary files
 #            kind = "raw"
@@ -186,6 +199,45 @@ class MYPFile(object):
                 return True
         return False
 
+    def _check_localization(self, file_header, data):
+#        if file_header["filename"] in ["3b5b30546d955481",
+#                                       "a78052459331e170",
+#                                       "eedfda0077674099",
+#                                       "2aaf0fa691e3639f",
+#                                       "11c1050ed00f1f4a",
+#                                       "0bdffb3f2e924fd7",
+#                                       "98e49051d1d9ed11",
+#                                       "b415479df273044a",
+#                                       "ac7656066636b235",
+#                                       "c9300bb68a3b40bb",
+#                                       "ee14dc7d4fee13a6",
+#                                       "da8e838553638838",
+#                                       "76c36aea7198ad3f",
+#                                       "6d8a9b006a1ef068",
+#                                       "8c09a710e09e88e4",
+#                                       "c41b92ce2816ab87",
+#                                       "a68ccb6b692cb71d",
+#                                       "c1e2f3795e5ed93c",
+#                                       "4bd2e6544beb826b",
+#                                       "a8c85df12f5553b3",
+#                                       "10629ed1620a6d68",
+#                                       "3d78e1804933a6c4",
+#                                       "906a7e8596eb6f1a",
+#                                       "12d5bbdc7456f4b7",
+#                                       ]:
+#            # a list of skill info (at least text)
+#            # possibly localization
+#            # this is probably a file that needs to be figured out
+#            print data[3:7].encode("hex")
+#            print struct.unpack("< I", data[3:7])
+#            return True
+#        count = struct.unpack("< I", data[3:7])[0]
+#        print count
+        if data[:3] == chr(0x01) + chr(0x00) + chr(0x00):
+            return True
+        return False
+
+
 def walk_files(base, extension):
     for root, subFolders, files in os.walk(base):
         for file in files:
@@ -194,72 +246,83 @@ def walk_files(base, extension):
                 yield f
 
 sourcebase = r"C:\Program Files (x86)\Star Wars-The Old Republic\Assets"
-destbase = r"D:\src\bespin\test\dest"
+destbase = r"D:\src\bespin\assets"
 start_time = time.time()
 for filename in walk_files(sourcebase, "tor"):
     failed = False
     myp = MYPFile(filename)
-    if os.path.basename(filename).rsplit(".",1)[0] in ["red_locale_en_us_1",
-                                                       "red_locale_en_us_2",
-                                                       "red_locale_en_us_3",
-                                                       "red_locale_en_us_4",
-                                                       "red_locale_en_us_5",
-                                                       "red_locale_en_us_6",
-                                                       "red_locale_en_us_7",
-                                                       "red_locale_en_us_8",
-                                                       "red_locale_en_us_9",
-                                                       "red_locale_en_us_10",
-                                                       "red_locale_en_us_11",
-                                                       "red_locale_en_us_12",
-                                                       "red_locale_en_us_13",
-                                                       "red_locale_en_us_14",
-                                                       "red_locale_en_us_15",
-                                                       "red_main_1",
-                                                       "red_main_10",
-                                                       "red_main_11",
-                                                       "red_main_12",
-                                                       "red_main_13",
-                                                       "red_main_14",
-                                                       "red_main_15",
-                                                       "red_main_16",
-                                                       "red_main_17",
-                                                       "red_main_18",
-                                                       "red_main_19",
-                                                       "red_main_2",
-                                                       "red_main_20",
-                                                       "red_main_21",
-                                                       "red_main_22",
-                                                       "red_main_23",
-                                                       "red_main_24",
-                                                       "red_main_25x",
-                                                       "red_main_26x",
-                                                       "red_main_27x",
-                                                       "red_main_3x",
-                                                       "red_main_4x",
-                                                       "red_main_5x",
-                                                       "red_main_6x",
-                                                       "red_main_7x",
-                                                       "red_main_8x",
-                                                       "red_main_9x",
-                                                       "red_system_1x",
+    skip_files = False
+    if skip_files and \
+        os.path.basename(filename).rsplit(".",1)[0] in ["swtor_en-us_area_alderaan_1",
+                                                        "swtor_en-us_area_balmorra_1",
+                                                        "swtor_en-us_area_belsavis_1",
+                                                        "swtor_en-us_area_corellia_1",
+                                                        "swtor_en-us_area_coruscant_1",
+                                                        "swtor_en-us_area_dromund_kaas_1",
+                                                        "swtor_en-us_area_hoth_1",
+                                                        "swtor_en-us_area_hutta_1",
+                                                        "swtor_en-us_area_ilum_1",
+                                                        "swtor_en-us_area_korriban_1",
+                                                        "swtor_en-us_area_misc_1",
+                                                        "swtor_en-us_area_nar_shaddaa_1",
+                                                        "swtor_en-us_area_open_worlds_1",
+                                                        "swtor_en-us_area_ord_mantell_1",
+                                                        "swtor_en-us_area_quesh_1",
+                                                        "swtor_en-us_area_raid_1",
+                                                        "swtor_en-us_area_taris_1",
+                                                        "swtor_en-us_area_tatooine_1",
+                                                        "swtor_en-us_area_tython_1",
+                                                        "swtor_en-us_area_voss_1",
+                                                        "swtor_en-us_cnv_comp_chars_imp_1",
+                                                        "swtor_en-us_cnv_comp_chars_rep_1",
+                                                        "swtor_en-us_cnv_misc_1",
+                                                        "swtor_en-us_cnv_transitions_1",
+                                                        "swtor_en-us_global_1",
+                                                        "swtor_main_anim_creature_a_1",
+                                                        "swtor_main_anim_creature_b_1",
+                                                        "swtor_main_anim_creature_npc_1",
+                                                        "swtor_main_anim_humanoid_bfab_1",
+                                                        "swtor_main_anim_humanoid_bfns_1",
+                                                        "swtor_main_anim_humanoid_bmaf_1",
+                                                        "swtor_main_anim_humanoid_bmns_1",
+                                                        "swtor_main_anim_misc_1",
+                                                        "swtor_main_areadat_1",
+                                                        "swtor_main_areadat_epsilon_1",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        "",
                                                        ]:
         print "skipping", os.path.basename(filename).rsplit(".",1)[0]
         myp.close()
         continue
-#        pass
 
     dirfile = destbase + "\\" + os.path.basename(filename).rsplit(".",1)[0]
     print "proccess", os.path.basename(filename).rsplit(".",1)[0]
     
     for f in myp.filetable:
-
         data, namehash, kind = myp._read_file(f)
-        if kind == "raw" or kind == "unknown":
+        if kind[:3] == "raw" or kind == "unknown":
             ext = "txt"
         else:
             ext = kind
-#        if kind in ["xml"]:
-        if True:
+        if not kind in ["raw",
+                        "face",
+                        "dds",
+                        "amx",
+                        "gfx",
+                        ]:
             try:
                 os.makedirs(dirfile + "\\" + kind)
             except:
@@ -273,10 +336,10 @@ for filename in walk_files(sourcebase, "tor"):
                 raise e
             outfile.write(data)
             outfile.close()
-#        assert kind != "unknown"
         if kind == "unknown":
-#            print "unknown:",namehash + "." + ext
+            print "unknown:",namehash + "." + ext
             failed = True
+        assert kind != "unknown"
     if failed:
         print "faaaaail", os.path.basename(filename).rsplit(".",1)[0]
 #        myp.close()
